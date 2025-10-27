@@ -28,3 +28,4 @@ for folder in os.listdir(f"{path}/processed_data/"):
 #save dataframe and series as csv files
 mainframe.to_csv('mainframe.csv', index=False)
 mainseries.to_csv('mainseries.csv', index=False)
+print("finished")
