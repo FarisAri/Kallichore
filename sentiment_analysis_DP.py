@@ -11,11 +11,15 @@ path = kagglehub.dataset_download("fahadullaha/facial-emotion-recognition-datase
 scaler = MinMaxScaler() #set scaler so it squishes pixel values between 0 and 1
 
 #initialize empty dataframe and series to hold data
+BATCH_SIZE = 1000  # Process 1000 images at a time
 mainlist = []
 mainseries = []
 base_path = f"{path}/processed_data/" #progress bar
 folders = os.listdir(base_path)
 total_images = sum(len(os.listdir(os.path.join(base_path, folder))) for folder in folders) # progress bar
+
+# Flags to track if files exist
+first_batch = True
 
 #loop through each folder (emotion category) and each image file within those folders
 with tqdm(total=total_images, desc="Processing images", unit="img") as pbar:
@@ -29,12 +33,27 @@ with tqdm(total=total_images, desc="Processing images", unit="img") as pbar:
             mainlist.append(arr)
             mainseries.append(folder) #add corresponding label to main series
             pbar.update(1)  # update progress bar
-        
-#save dataframe and series as csv files
-mainframe = pd.DataFrame(mainlist)
-mainframe.to_csv('mainframe.csv', index=False)
-mainseries = pd.Series(mainseries)
-mainseries.to_csv('mainseries.csv', index=False)
-print(mainframe.shape, mainframe.size)
-print(mainseries.shape, mainseries.size)
+            
+            # Save in batches to avoid memory issues
+            if len(mainlist) >= BATCH_SIZE:
+                batch_frame = pd.DataFrame(mainlist)
+                batch_series = pd.Series(mainseries)
+                
+                # Append to CSV (write header only on first batch)
+                batch_frame.to_csv('mainframe.csv', mode='a', header=first_batch, index=False)
+                batch_series.to_csv('mainseries.csv', mode='a', header=first_batch, index=False)
+                
+                first_batch = False
+                # Clear lists to free memory
+                mainlist = []
+                mainseries = []
+
+# Save any remaining data
+if mainlist:
+    batch_frame = pd.DataFrame(mainlist)
+    batch_series = pd.Series(mainseries)
+    batch_frame.to_csv('mainframe.csv', mode='a', header=first_batch, index=False)
+    batch_series.to_csv('mainseries.csv', mode='a', header=first_batch, index=False)
+
+print(f"Processed {total_images} images successfully")
 print("finished")
